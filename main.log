@@ -1,0 +1,28 @@
+/home/aashis_kumar_quillbot_com/bubble/.venv/lib/python3.10/site-packages/jieba/_compat.py:18: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+Device set to use cuda
+/home/aashis_kumar_quillbot_com/bubble/.venv/lib/python3.10/site-packages/transformers/models/whisper/generation_whisper.py:573: FutureWarning: The input name `inputs` is deprecated. Please make sure to use `input_features` instead.
+  warnings.warn(
+You have passed task=transcribe, but also have set `forced_decoder_ids` to [[1, None], [2, 50360]] which creates a conflict. `forced_decoder_ids` will be ignored in favor of task=transcribe.
+The attention mask is not set and cannot be inferred from input because pad token is same as eos token. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
+
+vocab :  /home/aashis_kumar_quillbot_com/bubble/.venv/lib/python3.10/site-packages/f5_tts/infer/examples/vocab.txt
+token :  custom
+model :  /home/aashis_kumar_quillbot_com/.cache/huggingface/hub/models--SWivid--F5-TTS/snapshots/84e5a410d9cead4de2f847e7c9369a6440bdfaca/F5TTS_v1_Base/model_1250000.safetensors 
+
+Download Vocos from huggingface charactr/vocos-mel-24khz
+Converting audio...
+Audio is over 12s, clipping short. (2)
+No reference text provided, transcribing reference audio...
+
+ref_text   Some days, the weight of exhaustion holds me down so heavy that even the smallest tasks feel overwhelming. I didn't feel like doing anything today, no energy, no motivation. 
+gen_text 0 "Ring, ring! Vern. Florida-bound, leaves a paper trail. T-stop, pause his paper. Next caller, delivery delay - wildlife interference. Porcupine on the paper tube, ridiculous!
+gen_text 1 Ring, ring! Judy. Staying town-bound, grandkids growing, health declining. Ring, ring! A woman, two kids, asks for November 15th papers. Looking up, ten dollars on the counter.
+gen_text 2 'Stop my mother’s paper.' 'Judy Willis?' Confusion. She was staying in town... 'No...no.' Grief washes over her. 'Cancel her subscription.
+gen_text 3 My mother has passed away...' Shivers down my spine. November 15th... The date on Judy’s obituary."
+
+
+Generating audio in 4 batches...
+  0%|          | 0/4 [00:00<?, ?it/s] 25%|██▌       | 1/4 [00:13<00:41, 13.93s/it] 50%|█████     | 2/4 [00:21<00:20, 10.16s/it] 75%|███████▌  | 3/4 [00:28<00:08,  8.54s/it]100%|██████████| 4/4 [00:33<00:00,  7.39s/it]100%|██████████| 4/4 [00:33<00:00,  8.42s/it]
+Generated speech saved to output/T-Stop.wav
+Successfully deleted audio file: output/T-Stop.wav
