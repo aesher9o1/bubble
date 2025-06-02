@@ -1,3 +1,3 @@
-from melody_generator import generate_melody
+from waveform import generate_waveform_video
 
-generate_melody("Generate eerie background audio featuring distant screams, unsettling rat-like chittering, heavy breathing, faint distorted laughter, and slow, suspenseful ambient tones building dread throughout.")
+generate_waveform_video("data/audio4.mp3")

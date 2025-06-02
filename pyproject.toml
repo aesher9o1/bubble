@@ -5,14 +5,20 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "audiocraft",
     "beautifulsoup4>=4.13.4",
     "f5-tts>=1.1.4",
     "feedparser>=6.0.11",
+    "librosa>=0.11.0",
+    "moviepy>=2.2.1",
     "openai>=1.82.0",
     "python-dotenv>=1.1.0",
     "slack-sdk>=3.35.0",
     "soundfile>=0.13.1",
-    "torch==2.7.0",
+    "torch==2.1.0",
     "torchaudio>=2.1.0",
     "transformers>=4.35.0",
 ]
+
+[tool.uv.sources]
+audiocraft = { git = "https://github.com/facebookresearch/audiocraft.git" }

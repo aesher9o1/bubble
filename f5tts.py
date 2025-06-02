@@ -14,13 +14,6 @@ from f5_tts.model import DiT
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Model configuration (but don't load the model yet)
-DEFAULT_TTS_MODEL_CFG = [
-    "hf://SWivid/F5-TTS/F5TTS_v1_Base/model_1250000.safetensors",
-    "hf://SWivid/F5-TTS/F5TTS_v1_Base/vocab.txt",
-    json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4)),
-]
-
 # Global variables to store loaded models
 _model = None
 _vocoder = None
@@ -37,8 +30,8 @@ def load_model_resources():
         return
     
     print("Loading F5-TTS model...")
-    ckpt_path = str(cached_path(DEFAULT_TTS_MODEL_CFG[0]))
-    F5TTS_model_cfg = json.loads(DEFAULT_TTS_MODEL_CFG[2])
+    ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_v1_Base/model_1250000.safetensors"))
+    F5TTS_model_cfg = dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4)
     _model = load_model(DiT, F5TTS_model_cfg, ckpt_path)
     _vocoder = load_vocoder()
     print("Model loaded successfully")
@@ -62,7 +55,7 @@ def unload_model_resources():
     torch.cuda.empty_cache()
     print("GPU memory cleared")
 
-def generate_audio(text: str, ref_audio_path: str = os.path.join(SCRIPT_DIR, "data", "audio3.mp3"), output_path: str = os.path.join(SCRIPT_DIR, "output", "generated_speech.wav")) -> str:
+def generate_audio(text: str, ref_audio_path: str = os.path.join(SCRIPT_DIR, "data", "audio4.mp3"), output_path: str = os.path.join(SCRIPT_DIR, "output", "generated_speech.wav")) -> str:
     """
     Generate audio from text using F5-TTS model.
     
