@@ -29,7 +29,7 @@ device = torch.device("cuda")
 
 # Global variable to store loaded model
 _model = None
-MODEL_MAX_DURATION = 12
+MODEL_MAX_DURATION = 20
 
 def load_model_resources():
     """Load the AudioCraft MusicGen *melody* model into memory.
@@ -44,7 +44,7 @@ def load_model_resources():
 
     # AudioCraft provides a convenient helper.  By default it puts the model on
     # GPU when available.
-    _model = MusicGen.get_pretrained("facebook/musicgen-stereo-melody-large", device=device.type)
+    _model = MusicGen.get_pretrained("facebook/musicgen-stereo-large", device=device.type)
 
     # Default generation parameters mirror those we had earlier.
     _model.set_generation_params(
@@ -111,65 +111,6 @@ def _generate_melody(
     return os.path.abspath(output_path)
 
 # -----------------------------------------------------------------------------
-# Internal helper: melody generation conditioned on an existing audio segment.
-# -----------------------------------------------------------------------------
-
-def _generate_melody_with_audio(
-    audio_path: str,
-    descriptions: Union[str, List[str]] = "",
-    output_dir: str = "output",
-) -> List[str]:
-    """Generate music conditioned on an *audio* melody as well as *descriptions*.
-
-    The input audio supplies the melodic/chromatic guide while *descriptions* give
-    high-level style hints (genre, mood, instruments, …).
-
-    Parameters
-    ----------
-    audio_path: str
-        Path to an audio file (any ffmpeg-decodable format) to be used as the
-        melodic guide.
-    descriptions: Union[str, List[str]]
-        Either a single prompt string or a list of prompts.  If a single string
-        is supplied it will be wrapped in a list.
-    output_dir: str, optional
-        Directory where each generated WAV will be saved.  Filenames are
-        sequential (0.wav, 1.wav, …).
-
-    Returns
-    -------
-    List[str]
-        List of file paths corresponding to each generated sample.
-    """
-    # Make sure descriptions is a list.
-    if isinstance(descriptions, str):
-        if descriptions != "":
-            descriptions = [desc.strip() for desc in descriptions.split(",")]
-        else:
-            descriptions = [""]
-
-    # Load reference melody.
-    melody_wav, sr = torchaudio.load(audio_path)
-
-    # The model expects shape [B, C, T]. Replicate melody for each prompt.
-    melody_batch = melody_wav[None].expand(len(descriptions), -1, -1)
-
-    # Ensure model is in memory (idempotent).
-    load_model_resources()
-
-    wav_batch = _model.generate_with_chroma(descriptions, melody_batch, sr)
-
-    # Persist each generated sample.
-    os.makedirs(output_dir, exist_ok=True)
-    saved_paths: List[str] = []
-    for idx, wav in enumerate(wav_batch):
-        out_path = os.path.join(output_dir, f"{idx}.wav")
-        audio_write(out_path, wav.cpu(), _model.sample_rate, strategy="loudness", add_suffix=False)
-        saved_paths.append(os.path.abspath(out_path))
-
-    return saved_paths
-
-# -----------------------------------------------------------------------------
 # Utility helper to create a melody long enough for an external podcast track.
 # -----------------------------------------------------------------------------
 
@@ -178,13 +119,10 @@ def generate_full_melody(
     prompt: str,
     output_path: str,
 ) -> str:
-    """Generate background music of *total_duration_sec* seconds.
+    """Generate background music of *total_duration_sec* seconds by repeating a melody.
 
-    It stitches together as many `MODEL_MAX_DURATION`-second segments as needed.
-    The first segment is created solely from *prompt*; every subsequent segment
-    is conditioned on **all** segments generated so far via
-    `_generate_melody_with_audio` to preserve musical coherence across the
-    entire track.
+    It generates a single `MODEL_MAX_DURATION`-second segment from *prompt* and 
+    repeats it as many times as needed to reach the desired total duration.
 
     Parameters
     ----------
@@ -202,73 +140,41 @@ def generate_full_melody(
     """
     from math import ceil
 
-    # Load the MusicGen model once for the full-length generation.
+    # Load the MusicGen model once for the generation.
     load_model_resources()
 
     # Determine total target length in milliseconds.
-    podcast_duration_ms = total_duration_sec * 1000
-
+    target_duration_ms = total_duration_sec * 1000
     segment_ms = MODEL_MAX_DURATION * 1000
-    segments_needed = ceil(podcast_duration_ms / segment_ms)
+    
+    # Calculate how many repetitions we need
+    repetitions_needed = ceil(target_duration_ms / segment_ms)
 
-    # Temporary storage for segment WAVs.
+    # Temporary storage for the base segment.
     tmp_dir = os.path.join(os.path.dirname(output_path), "tmp_segments")
     os.makedirs(tmp_dir, exist_ok=True)
 
-    segment_paths: List[str] = []
-
-    # 1) First segment from prompt only.
-    first_path = os.path.join(tmp_dir, "segment_0.wav")
-    segment_paths.append(_generate_melody(prompt, output_path=first_path))
-
-    # Keep track of everything that has been generated so far so that the model
-    # can take the **entire** melody as context for the next segment (not just
-    # the immediate predecessor).
-    cumulative_melody = AudioSegment.from_wav(first_path)
-
-    # 2) Subsequent segments conditioned on the cumulative audio so far.
-    for idx in range(1, segments_needed):
-        # Persist the current cumulative melody so the model can use it as a
-        # chroma guide.  (Over-write the same file each iteration to save disk
-        # space.)
-        cumulative_path = os.path.join(tmp_dir, "cumulative_prev.wav")
-        cumulative_melody.export(cumulative_path, format="wav")
-
-        seg_dir = os.path.join(tmp_dir, f"segment_{idx}")
-        os.makedirs(seg_dir, exist_ok=True)
-
-        conditioned_path = _generate_melody_with_audio(
-            audio_path=cumulative_path,
-            descriptions=prompt,
-            output_dir=seg_dir,
-        )[0]
-        segment_paths.append(conditioned_path)
-
-        # Update the cumulative melody with the newly generated segment so that
-        # the next iteration has the full context.
-        cumulative_melody += AudioSegment.from_wav(conditioned_path)
-
-    # Concatenate and trim to exact duration.
+    # Generate the base melody segment
+    base_segment_path = os.path.join(tmp_dir, "base_segment.wav")
+    _generate_melody(prompt, output_path=base_segment_path)
+    
+    # Load the base segment and repeat it
+    base_melody = AudioSegment.from_wav(base_segment_path)
     full_melody = AudioSegment.empty()
-    for p in segment_paths:
-        full_melody += AudioSegment.from_wav(p)
+    
+    for _ in range(repetitions_needed):
+        full_melody += base_melody
 
-    full_melody = full_melody[:podcast_duration_ms]
+    # Trim to exact duration
+    full_melody = full_melody[:target_duration_ms]
 
+    # Export the final melody
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     full_melody.export(output_path, format="wav")
 
-    # Cleanup temp files.
-    for p in segment_paths:
-        if os.path.exists(p):
-            os.remove(p)
-    # Remove the cumulative tmp file if present.
-    cumulative_tmp = os.path.join(tmp_dir, "cumulative_prev.wav")
-    if os.path.exists(cumulative_tmp):
-        os.remove(cumulative_tmp)
-
-    # Recursively remove the entire temporary directory tree (including any
-    # empty sub-directories that were created for intermediate segments).
+    # Cleanup temp files
+    if os.path.exists(base_segment_path):
+        os.remove(base_segment_path)
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

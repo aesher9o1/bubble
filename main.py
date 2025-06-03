@@ -7,6 +7,7 @@ from melody_generator import generate_full_melody
 from f5tts import generate_audio
 from slack import SlackMessenger
 from pydub import AudioSegment
+import os
 
 def merge_audio_with_melody(podcast_path, melody_path, output_path):
     """
@@ -67,9 +68,9 @@ if __name__ == "__main__":
     slack_messenger.send_audio_file(channel="C08TN9BHWBG", file_path=merged_audio, initial_comment=podcast)
     
     # # Clean up all audio files
-    # for file_path in [audio, melody, merged_audio]:
-    #     if os.path.exists(file_path):
-    #         os.remove(file_path)
-    #         print(f"Successfully deleted audio file: {file_path}")
+    for file_path in [audio, melody, merged_audio]:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Successfully deleted audio file: {file_path}")
 
     
