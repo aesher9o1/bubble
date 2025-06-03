@@ -9,7 +9,7 @@ Summary: {summary}
 
 Your transcript must:
 1. Start with an IMMEDIATELY gripping hook (first 3-5 seconds) that makes viewers stop scrolling
-2. Keep the story under 60 seconds total
+2. Keep the story under 90 seconds total
 3. Include dramatic pauses and tension-building moments
 4. End with a shocking twist or revelation
 5. Use short, impactful sentences
