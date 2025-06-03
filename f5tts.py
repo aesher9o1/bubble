@@ -1,7 +1,6 @@
 import torch
 import soundfile as sf
 import os
-import json
 from cached_path import cached_path
 from f5_tts.infer.utils_infer import (
     infer_process,

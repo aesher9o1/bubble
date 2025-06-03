@@ -44,8 +44,6 @@ if __name__ == "__main__":
     podcast = generate_podcast(latest_article["title"], latest_article["summary"])
     music_prompt = "Dark, suspenseful track with low strings, slow tempo, spooky podcast intro"
 
-    print(f"Music prompt: {music_prompt}")
-
     file_name = latest_article["title"].replace(" ", "_")
     
     output_podcast_path = f"output/{file_name}_podcast.wav"
@@ -65,7 +63,29 @@ if __name__ == "__main__":
     merged_audio = merge_audio_with_melody(audio, melody, output_merged_path)
     
     slack_messenger = SlackMessenger()
-    slack_messenger.send_audio_file(channel="C08TN9BHWBG", file_path=merged_audio, initial_comment=podcast)
+    
+    # Prepare file uploads for both merged audio and melody
+    file_uploads = [
+        {
+            'file': merged_audio,
+            'filename': f"{file_name}_merged.wav",
+            'title': f"{latest_article['title']} - Podcast with Background Music"
+        },
+        {
+            'file': melody,
+            'filename': f"{file_name}_melody.wav", 
+            'title': f"{latest_article['title']} - Background Melody"
+        }
+    ]
+    
+    # Send both files in a single API call
+    response = slack_messenger.send_audio_file(
+        channel="C08TN9BHWBG", 
+        file_uploads=file_uploads, 
+        initial_comment=podcast
+    )
+
+    print(response)
     
     # # Clean up all audio files
     for file_path in [audio, melody, merged_audio]:
