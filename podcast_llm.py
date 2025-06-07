@@ -8,8 +8,8 @@ Title: {title}
 Summary: {summary}
 
 Your transcript must:
-1. Label segments with <neutral></neutral> <angry></angry> <scared></scared> <surprised></surprised> <silence>SECONDS</silence> example <neutral>Final rule: "If you see your own username,</neutral> <angry>STOP</angry> <neutral>reading."</neutral>.
-2. Do not change emotions if not required. Stick to neutral if confused. Make sure you close the tags.
+1. Label segments with <neutral></neutral> <angry></angry> <scared></scared> <silence>SECONDS</silence> example <neutral>Final rule: "If you see your own username,</neutral> <angry>STOP</angry> <neutral>reading."</neutral>.
+2. Do not change emotions if not required. Start with neutral, end with neutral and keep the emotions consistent.
 3. Start with an IMMEDIATELY gripping hook (first 3-5 seconds) that makes viewers stop scrolling
 4. Keep the story under 80 seconds total
 5. Include dramatic pauses and tension-building moments

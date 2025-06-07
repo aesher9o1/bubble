@@ -5,7 +5,7 @@ import os
 
 def get_latest_article():
     # URL of the RSS feed
-    feed_url = "https://www.reddit.com/r/nosleep.rss"
+    feed_url = "https://www.reddit.com/r/nosleep/new.rss"
     title_file = "latest_title.json"
     
     try:

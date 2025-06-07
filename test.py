@@ -1,3 +1,2 @@
-from waveform import generate_waveform_video
-
-generate_waveform_video("data/audio4.mp3")
+from rss_reader import get_latest_article
+print(get_latest_article())
