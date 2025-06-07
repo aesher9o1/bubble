@@ -4,10 +4,29 @@ load_dotenv()
 from rss_reader import get_latest_article
 from podcast_llm import generate_podcast
 from melody_generator import generate_full_melody
-from f5tts import generate_audio
+from f5tts import generate_emotion_audio
 from slack import SlackMessenger
 from pydub import AudioSegment
+import random
+import string 
 import os
+import re
+
+def strip_xml_tags(text):
+    """
+    Strip XML-like tags from text, keeping only the content inside the tags.
+    For silence tags like <silence>2</silence>, removes the entire tag.
+    """
+    # Remove silence tags completely (including their content)
+    text = re.sub(r'<silence>\d*</silence>', '', text)
+    
+    # Remove all other XML tags but keep their content
+    text = re.sub(r'<[^>]+>(.*?)</[^>]+>', r'\1', text)
+    
+    # Clean up extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
 
 def merge_audio_with_melody(podcast_path, melody_path, output_path):
     """
@@ -42,12 +61,14 @@ if __name__ == "__main__":
     latest_article = get_latest_article()
     
     podcast = generate_podcast(latest_article["title"], latest_article["summary"])
+   
     music_prompt = "Dark, suspenseful track with low strings, slow tempo, spooky podcast intro"
 
-    file_name = latest_article["title"].replace(" ", "_")
+    # Generate a random name with 8 characters
+    file_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
     
     output_podcast_path = f"output/{file_name}_podcast.wav"
-    audio = generate_audio(podcast, output_path=output_podcast_path)
+    audio = generate_emotion_audio(podcast, output_path=output_podcast_path)
 
     output_melody_path = f"output/{file_name}_melody.wav"
     # Calculate podcast length in seconds (rounded up)
@@ -64,6 +85,9 @@ if __name__ == "__main__":
     
     slack_messenger = SlackMessenger()
     
+    # Strip XML tags from podcast text for Slack message
+    clean_podcast_text = strip_xml_tags(podcast)
+    
     # Prepare file uploads for both merged audio and melody
     file_uploads = [
         {
@@ -78,14 +102,12 @@ if __name__ == "__main__":
         }
     ]
     
-    # Send both files in a single API call
+    # Send both files in a single API call with cleaned text
     response = slack_messenger.send_audio_file(
         channel="C08TN9BHWBG", 
         file_uploads=file_uploads, 
-        initial_comment=podcast
+        initial_comment=clean_podcast_text
     )
-
-    print(response)
     
     # # Clean up all audio files
     for file_path in [audio, melody, merged_audio]:

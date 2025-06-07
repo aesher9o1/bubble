@@ -1,15 +1,16 @@
 import feedparser
+import requests
 import json
 import os
 
 def get_latest_article():
     # URL of the RSS feed
-    feed_url = "https://rss.app/feeds/qFHFPX6kwFHf8ArY.xml"
+    feed_url = "https://www.reddit.com/r/nosleep.rss"
     title_file = "latest_title.json"
     
     try:
-        # Parse the feed and save to JSON
-        feed = feedparser.parse(feed_url)
+        response = requests.get(feed_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+        feed = feedparser.parse(response.content)
         if not feed.entries:
             return None
             
