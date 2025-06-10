@@ -3,8 +3,9 @@ load_dotenv()
 
 from rss_reader import get_latest_article
 from podcast_llm import generate_podcast
-from melody_generator import generate_full_melody
+from audio_clipper import get_random_audio_segment
 from f5tts import generate_emotion_audio
+from video_clipper import process_video_with_audio
 from slack import SlackMessenger
 from pydub import AudioSegment
 import random
@@ -77,42 +78,51 @@ if __name__ == "__main__":
     total_duration_sec = math.ceil(len(podcast_audio_seg) / 1000)
 
     # Generate background melody matching the podcast duration
-    melody = generate_full_melody(total_duration_sec, music_prompt, output_melody_path)
+    melody = get_random_audio_segment(total_duration_sec, output_melody_path)
     
     # Merge the podcast audio with background melody
     output_merged_path = f"output/{file_name}_merged.wav"
     merged_audio = merge_audio_with_melody(audio, melody, output_merged_path)
+    
+    # Process video with the merged audio
+    video_results = process_video_with_audio(total_duration_sec, merged_audio, file_name)
     
     slack_messenger = SlackMessenger()
     
     # Strip XML tags from podcast text for Slack message
     clean_podcast_text = strip_xml_tags(podcast)
     
-    # Prepare file uploads for both merged audio and melody
+    # Prepare file uploads for video segment, melody, and video with audio
     file_uploads = [
         {
-            'file': merged_audio,
-            'filename': f"{file_name}_merged.wav",
-            'title': f"{latest_article['title']} - Podcast with Background Music"
+            'file': video_results['video_segment'],
+            'filename': f"{file_name}_video_segment.mp4",
+            'title': f"{latest_article['title']} - Video Segment (No Audio)"
         },
         {
             'file': melody,
             'filename': f"{file_name}_melody.wav", 
             'title': f"{latest_article['title']} - Background Melody"
+        },
+        {
+            'file': video_results['video_with_audio'],
+            'filename': f"{file_name}_video_with_audio.mp4",
+            'title': f"{latest_article['title']} - Video with Podcast and Music"
         }
     ]
     
-    # Send both files in a single API call with cleaned text
+    # Send all files in a single API call with cleaned text
     response = slack_messenger.send_audio_file(
         channel="C08TN9BHWBG", 
         file_uploads=file_uploads, 
         initial_comment=clean_podcast_text
     )
     
-    # # Clean up all audio files
-    for file_path in [audio, melody, merged_audio]:
+    # Clean up all audio and video files
+    cleanup_files = [audio, melody, merged_audio, video_results['video_segment'], video_results['video_with_audio']]
+    for file_path in cleanup_files:
         if os.path.exists(file_path):
             os.remove(file_path)
-            print(f"Successfully deleted audio file: {file_path}")
+            print(f"Successfully deleted file: {file_path}")
 
     

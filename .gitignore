@@ -8,3 +8,6 @@ output/
 # Environments
 .env
 .venv
+
+data/background/
+data/video/
