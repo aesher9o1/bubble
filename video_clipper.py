@@ -3,6 +3,9 @@ import random
 import subprocess
 import ffmpeg
 
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Use conda ffmpeg which has NVENC support
 FFMPEG_BINARY = "/opt/conda/bin/ffmpeg"
 
@@ -127,10 +130,13 @@ def get_video_info(video_path):
         raise ValueError(f"Could not get video info for {video_path}: {e}")
 
 
-def get_random_video_from_directory(video_directory="data/video"):
+def get_random_video_from_directory(video_directory=None):
     """
     Pick a random video file from the specified directory.
     """
+    if video_directory is None:
+        video_directory = os.path.join(SCRIPT_DIR, "data", "video")
+        
     if not os.path.exists(video_directory):
         raise ValueError(f"Video directory {video_directory} does not exist")
     
@@ -277,7 +283,7 @@ def add_audio_to_video(video_path, audio_path, output_path):
         raise RuntimeError(f"FFmpeg error during audio addition: {e}")
 
 
-def process_video_with_audio(target_duration_seconds, merged_audio_path, file_name, video_directory="data/video"):
+def process_video_with_audio(target_duration_seconds, merged_audio_path, file_name, video_directory=None):
     """
     Complete video processing pipeline with GPU acceleration:
     1. Pick a random video from directory
@@ -293,6 +299,9 @@ def process_video_with_audio(target_duration_seconds, merged_audio_path, file_na
     Returns:
         dict: Contains paths to generated files and performance info
     """
+    if video_directory is None:
+        video_directory = os.path.join(SCRIPT_DIR, "data", "video")
+        
     # Ensure output directory exists
     os.makedirs("output", exist_ok=True)
     

@@ -50,10 +50,11 @@ def merge_audio_with_melody(podcast_path, melody_path, output_path):
     else:
         extended_melody = melody[:podcast_duration]
     
-    # Reduce melody volume to make it background music but keep it audible
-    background_melody = extended_melody - 20  # Reduce by 20dB for audible but not overpowering background
-    # Overlay the melody on the podcast
-    merged_audio = podcast.overlay(background_melody)
+    # Increase podcast volume and reduce melody volume for better balance
+    boosted_podcast = podcast + 6  # Increase podcast volume by 6dB
+    background_melody = extended_melody - 33  # Reduce melody by 33dB for more subtle background
+    # Overlay the melody on the boosted podcast
+    merged_audio = boosted_podcast.overlay(background_melody)
     
     merged_audio.export(output_path, format="wav")
     return output_path

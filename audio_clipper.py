@@ -2,6 +2,9 @@ import os
 import random
 from pydub import AudioSegment
 
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def get_random_audio_segment(duration_sec, output_path):
     """
     Pick a random audio file from data/background directory and extract a random segment
@@ -14,7 +17,7 @@ def get_random_audio_segment(duration_sec, output_path):
     Returns:
         str: Path to the saved audio segment
     """
-    background_dir = "data/background"
+    background_dir = os.path.join(SCRIPT_DIR, "data", "background")
     
     # Get all audio files from the background directory
     audio_files = [f for f in os.listdir(background_dir) if f.endswith(('.webm', '.mp3', '.wav', '.m4a'))]
