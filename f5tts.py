@@ -231,7 +231,7 @@ def generate_emotion_audio(text: str, output_path: str = os.path.join(SCRIPT_DIR
                         _vocoder,
                         cross_fade_duration=0.15,
                         nfe_step=32,
-                        speed=0.8,
+                        speed=0.9,
                     )
                 
                 all_audio_segments.append(final_wave)

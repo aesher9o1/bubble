@@ -2,11 +2,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from rss_reader import get_latest_article
-from podcast_llm import generate_podcast
+from podcast_llm import generate_podcast, format_podcast_for_youtube
 from audio_clipper import get_random_audio_segment
 from f5tts import generate_emotion_audio
 from video_clipper import process_video_with_audio
 from slack import SlackMessenger
+from youtube_uploader import YouTubeUploader
 from pydub import AudioSegment
 import random
 import string 
@@ -52,7 +53,7 @@ def merge_audio_with_melody(podcast_path, melody_path, output_path):
     
     # Increase podcast volume and reduce melody volume for better balance
     boosted_podcast = podcast + 6  # Increase podcast volume by 6dB
-    background_melody = extended_melody - 33  # Reduce melody by 33dB for more subtle background
+    background_melody = extended_melody - 28  # Reduce melody by 28dB for more subtle background
     # Overlay the melody on the boosted podcast
     merged_audio = boosted_podcast.overlay(background_melody)
     
@@ -93,6 +94,36 @@ if __name__ == "__main__":
     # Strip XML tags from podcast text for Slack message
     clean_podcast_text = strip_xml_tags(podcast)
     
+    # Upload to YouTube first
+    youtube_link = None
+    try:
+        # Use server-optimized uploader (always uses credentials.json)
+        youtube_uploader = YouTubeUploader.for_server()
+        
+        # Format the content for YouTube
+        youtube_title, youtube_description, youtube_tags = format_podcast_for_youtube(
+            latest_article["title"], 
+            clean_podcast_text, 
+            latest_article.get("url")  # Include article URL if available
+        )
+        
+        # Upload the video with audio to YouTube
+        youtube_response = youtube_uploader.upload_video(
+            video_file=video_results['video_with_audio'],
+            title=youtube_title,
+            description=youtube_description,
+            tags=youtube_tags,
+            privacy_status="public"  # Change to "public" or "unlisted" as needed
+        )
+        
+        video_id = youtube_response['id']
+        youtube_link = f"https://www.youtube.com/watch?v={video_id}"
+        print(f"Successfully uploaded to YouTube: {youtube_link}")
+        
+    except Exception as e:
+        print(f"Failed to upload to YouTube: {e}")
+        youtube_link = f"⚠️ YouTube upload failed: {str(e)}"
+
     # Prepare file uploads for video segment, melody, and video with audio
     file_uploads = [
         {
@@ -112,11 +143,19 @@ if __name__ == "__main__":
         }
     ]
     
-    # Send all files in a single API call with cleaned text
+    # Prepare the message with podcast text and YouTube link
+    slack_message = clean_podcast_text
+    if youtube_link:
+        if youtube_link.startswith("⚠️"):
+            slack_message += f"\n\n{youtube_link}"
+        else:
+            slack_message += f"\n\n🎬 Video uploaded to YouTube: {youtube_link}"
+    
+    # Send all files in a single API call with cleaned text and YouTube link
     response = slack_messenger.send_audio_file(
         channel="C08TN9BHWBG", 
         file_uploads=file_uploads, 
-        initial_comment=clean_podcast_text
+        initial_comment=slack_message
     )
     
     # Clean up all audio and video files

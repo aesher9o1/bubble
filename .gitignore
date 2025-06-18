@@ -9,5 +9,9 @@ output/
 .env
 .venv
 
+# YouTube API credentials
+credentials.json
+token.pickle
+
 data/background/
 data/video/
