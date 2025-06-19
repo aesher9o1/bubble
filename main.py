@@ -94,8 +94,10 @@ if __name__ == "__main__":
     # Strip XML tags from podcast text for Slack message
     clean_podcast_text = strip_xml_tags(podcast)
     
-    # Upload to YouTube first
+    # Upload to YouTube - both regular video and shorts
     youtube_link = None
+    youtube_shorts_link = None
+    
     try:
         # Use server-optimized uploader (always uses credentials.json)
         youtube_uploader = YouTubeUploader.for_server()
@@ -107,7 +109,8 @@ if __name__ == "__main__":
             latest_article.get("url")  # Include article URL if available
         )
         
-        # Upload the video with audio to YouTube
+        # Upload the regular video with audio to YouTube
+        print("🎬 Uploading regular video to YouTube...")
         youtube_response = youtube_uploader.upload_video(
             video_file=video_results['video_with_audio'],
             title=youtube_title,
@@ -118,13 +121,29 @@ if __name__ == "__main__":
         
         video_id = youtube_response['id']
         youtube_link = f"https://www.youtube.com/watch?v={video_id}"
-        print(f"Successfully uploaded to YouTube: {youtube_link}")
+        print(f"✅ Regular video uploaded to YouTube: {youtube_link}")
+        
+        # Upload the YouTube Shorts version
+        print("📱 Uploading Shorts version to YouTube...")
+        shorts_title = f"{youtube_title} #Shorts"
+        shorts_response = youtube_uploader.upload_video(
+            video_file=video_results['shorts']['shorts_final'],
+            title=shorts_title,
+            description=youtube_description + "\n\n#Shorts #Short #Viral",
+            tags=youtube_tags + ["shorts", "short", "viral"],
+            privacy_status="public"
+        )
+        
+        shorts_video_id = shorts_response['id']
+        youtube_shorts_link = f"https://www.youtube.com/watch?v={shorts_video_id}"
+        print(f"✅ Shorts video uploaded to YouTube: {youtube_shorts_link}")
         
     except Exception as e:
         print(f"Failed to upload to YouTube: {e}")
         youtube_link = f"⚠️ YouTube upload failed: {str(e)}"
+        youtube_shorts_link = f"⚠️ YouTube Shorts upload failed: {str(e)}"
 
-    # Prepare file uploads for video segment, melody, and video with audio
+    # Prepare file uploads including shorts files
     file_uploads = [
         {
             'file': video_results['video_segment'],
@@ -139,27 +158,51 @@ if __name__ == "__main__":
         {
             'file': video_results['video_with_audio'],
             'filename': f"{file_name}_video_with_audio.mp4",
-            'title': f"{latest_article['title']} - Video with Podcast and Music"
+            'title': f"{latest_article['title']} - Regular Video with Audio"
+        },
+        {
+            'file': video_results['shorts']['shorts_final'],
+            'filename': f"{file_name}_shorts.mp4",
+            'title': f"{latest_article['title']} - YouTube Shorts (9:16)"
         }
     ]
     
-    # Prepare the message with podcast text and YouTube link
+    # Prepare the message with podcast text and YouTube links
     slack_message = clean_podcast_text
+    
+    # Add YouTube links to message
     if youtube_link:
         if youtube_link.startswith("⚠️"):
             slack_message += f"\n\n{youtube_link}"
         else:
-            slack_message += f"\n\n🎬 Video uploaded to YouTube: {youtube_link}"
+            slack_message += f"\n\n🎬 Regular Video: {youtube_link}"
     
-    # Send all files in a single API call with cleaned text and YouTube link
+    if youtube_shorts_link:
+        if youtube_shorts_link.startswith("⚠️"):
+            slack_message += f"\n{youtube_shorts_link}"
+        else:
+            slack_message += f"\n📱 Shorts Video: {youtube_shorts_link}"
+    
+    # Send all files in a single API call with cleaned text and YouTube links
     response = slack_messenger.send_audio_file(
         channel="C08TN9BHWBG", 
         file_uploads=file_uploads, 
         initial_comment=slack_message
     )
     
-    # Clean up all audio and video files
-    cleanup_files = [audio, melody, merged_audio, video_results['video_segment'], video_results['video_with_audio']]
+    # Clean up all audio and video files (including shorts files)
+    cleanup_files = [
+        audio, 
+        melody, 
+        merged_audio, 
+        video_results['video_segment'], 
+        video_results['video_with_audio'],
+        # Add shorts cleanup files
+        video_results['shorts']['shorts_segment'],
+        video_results['shorts']['shorts_converted'],
+        video_results['shorts']['shorts_final']
+    ]
+    
     for file_path in cleanup_files:
         if os.path.exists(file_path):
             os.remove(file_path)

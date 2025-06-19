@@ -10,6 +10,9 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 import logging
 
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class YouTubeUploader:
     """
     YouTube video uploader following the official YouTube API guide pattern.
@@ -33,7 +36,7 @@ class YouTubeUploader:
         Args:
             token_file (str): Path to store the OAuth2 token pickle file
         """
-        self.client_secrets_file = 'credentials.json'  # Always use this file
+        self.client_secrets_file = os.path.join(os.getcwd(), 'credentials.json')
         self.token_file = token_file
         self.youtube = None
         self._authenticate()
